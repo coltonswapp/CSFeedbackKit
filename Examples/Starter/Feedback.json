@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "enabledIn": ["xcode", "testflight"],
+  "tester": { "source": "field", "field": "userEmail" },
+  "fields": [
+    { "key": "userEmail", "label": "Account", "sources": ["session"] }
+  ],
+  "tags": [
+    { "id": "bug", "label": "Bug" },
+    { "id": "ux", "label": "UX" },
+    { "id": "idea", "label": "Idea" }
+  ],
+  "destinations": [
+    {
+      "id": "intake",
+      "url": "${FEEDBACK_URL}",
+      "signing": { "scheme": "standard-webhooks", "secret": "${FEEDBACK_SECRET}" }
+    }
+  ],
+  "attachments": {
+    "screenshot": { "defaultOn": true },
+    "device": {}
+  },
+  "triggers": [
+    { "type": "screenshot", "prompt": "Send feedback about this screen?" }
+  ]
+}

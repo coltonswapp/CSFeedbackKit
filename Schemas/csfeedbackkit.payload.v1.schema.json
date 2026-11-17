@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "csfeedbackkit.payload.v1.schema.json",
+  "title": "CSFeedbackKit payload v1",
+  "description": "Body sent to every destination. With multipart encoding this JSON is the `payload` part, attachment `data` is omitted, and each attachment is a file part named by its filename. The same `id` is sent as the Idempotency-Key header and is stable across retries. Any 2xx is delivered; an optional `id` in a JSON response is kept. Signed destinations add webhook-id (= id), webhook-timestamp, and webhook-signature headers (Standard Webhooks).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "created_at",
+    "note",
+    "tags",
+    "custom",
+    "app",
+    "attachments"
+  ],
+  "properties": {
+    "schema": {
+      "const": "csfeedbackkit/v1"
+    },
+    "type": {
+      "description": "Event type from the destination's eventType (default feedback.submitted).",
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_id": {
+      "description": "Shared by items submitted together from the tray.",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "When the tester captured the note.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "screen"
+      ],
+      "properties": {
+        "screen": {
+          "description": "View controller type name.",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "custom": {
+      "description": "Project fields declared in config, captured at note time.",
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "tester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string"
+        }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_id",
+        "version",
+        "build",
+        "environment"
+      ],
+      "properties": {
+        "bundle_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "build": {
+          "type": "string"
+        },
+        "environment": {
+          "enum": [
+            "xcode",
+            "testflight",
+            "appstore"
+          ]
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "os",
+        "locale",
+        "time_zone"
+      ],
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "os": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "time_zone": {
+          "type": "string"
+        }
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "content_type",
+          "filename"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "screenshot",
+              "logs"
+            ]
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "data": {
+            "description": "Base64. Inline JSON encoding only.",
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "url": {
+            "description": "Download link, for destinations with attachments: link.",
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "description": "When url stops working, if known.",
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

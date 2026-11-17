@@ -1,0 +1,45 @@
+{
+  "$schema": "../../Schemas/csfeedbackkit.config.v1.schema.json",
+  "version": 1,
+  "enabledIn": ["xcode", "testflight", "appstore"],
+  "enabledWhen": "staffAccess",
+  "fields": [
+    { "key": "agent", "type": "string", "value": "shohei", "visible": false },
+    { "key": "lessonId", "label": "Lesson", "sources": ["screen"] },
+    { "key": "lessonTitle", "label": "Lesson title", "sources": ["screen"] },
+    { "key": "sceneSlug", "label": "Scene", "sources": ["screen"] },
+    { "key": "sceneTitle", "label": "Scene title", "sources": ["screen"] },
+    { "key": "studioLink", "label": "Studio", "sources": ["screen"] },
+    { "key": "focus", "label": "Looking at", "type": "stringArray", "sources": ["screen"] }
+  ],
+  "tags": [
+    { "id": "content" },
+    { "id": "bug" },
+    { "id": "local-prompt" },
+    { "id": "remote-agent" },
+    { "id": "ux" },
+    { "id": "quiz" },
+    { "id": "fyi" },
+    { "id": "question" }
+  ],
+  "destinations": [
+    {
+      "id": "studio",
+      "url": "${SHIZEN_CMS_BASE_URL}/api/client/content-qa/notes",
+      "auth": "staff"
+    }
+  ],
+  "attachments": {
+    "screenshot": { "defaultOn": true },
+    "device": {}
+  },
+  "triggers": [
+    { "type": "screenshot", "prompt": "QA this screen?", "environments": ["xcode"] }
+  ],
+  "copy": {
+    "composerTitle": "QA note",
+    "sendButton": "Send to agent",
+    "sentToast": "Sent to Shohei",
+    "failedTitle": "Couldn’t send note"
+  }
+}

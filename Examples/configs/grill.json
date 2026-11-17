@@ -1,0 +1,40 @@
+{
+  "$schema": "../../Schemas/csfeedbackkit.config.v1.schema.json",
+  "version": 1,
+  "enabledIn": ["xcode", "testflight"],
+  "tester": { "source": "field", "field": "userEmail" },
+  "fields": [
+    { "key": "userEmail", "label": "Account", "sources": ["session"], "sensitive": true },
+    { "key": "grillId", "label": "Grill", "sources": ["screen", "session"] },
+    { "key": "firmware", "label": "Firmware", "sources": ["screen"] },
+    { "key": "appVariant", "value": "grill-pro", "visible": false }
+  ],
+  "tags": [
+    { "id": "bug", "label": "Bug", "metadata": { "kind": "bug" } },
+    { "id": "polish", "label": "Polish", "metadata": { "kind": "task", "labels": ["ui-polish"] } },
+    { "id": "connectivity", "label": "Connectivity", "metadata": { "area": "bluetooth" } },
+    { "id": "idea", "label": "Idea" }
+  ],
+  "destinations": [
+    {
+      "id": "intake",
+      "url": "${FEEDBACK_INTAKE_URL}",
+      "headers": { "X-Api-Key": "${FEEDBACK_INTAKE_KEY}" },
+      "encoding": "json"
+    }
+  ],
+  "attachments": {
+    "screenshot": {},
+    "device": {},
+    "logs": { "subsystems": [], "lastMinutes": 10 }
+  },
+  "triggers": [
+    { "type": "screenshot", "prompt": "Send feedback about this screen?" }
+  ],
+  "session": { "enabled": true, "maxItems": 25 },
+  "copy": {
+    "composerTitle": "Send feedback",
+    "sendButton": "Send",
+    "sentToast": "Thanks, sent"
+  }
+}

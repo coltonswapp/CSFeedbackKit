@@ -1,0 +1,561 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "csfeedbackkit.config.v1.schema.json",
+  "title": "CSFeedbackKit config v1",
+  "description": "Drives CSFeedbackKit in a host app. Names in `enabledWhen` and `destinations[].auth` refer to handlers registered in code. `${NAME}` in destination URLs and header values resolves from Info.plist.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "destinations"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "enabledIn": {
+      "description": "Build environments where the package runs. Default: xcode, testflight.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/environment"
+      },
+      "uniqueItems": true
+    },
+    "enabledWhen": {
+      "description": "Name of a check registered in code, e.g. \"staffAccess\".",
+      "type": "string",
+      "minLength": 1
+    },
+    "tester": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "enum": [
+            "none",
+            "prompt",
+            "field"
+          ],
+          "default": "none"
+        },
+        "field": {
+          "description": "Field key when source is \"field\".",
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string",
+          "default": "Your name or email"
+        }
+      },
+      "if": {
+        "properties": {
+          "source": {
+            "const": "field"
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "then": {
+        "required": [
+          "field"
+        ]
+      }
+    },
+    "fields": {
+      "description": "Project-specific values sent under `custom`. Only declared keys are sent.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tag"
+      }
+    },
+    "destinations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/destination"
+      }
+    },
+    "attachments": {
+      "description": "Each section absent means off. Present means on unless enabled is false.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "screenshot": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "defaultOn": {
+              "type": "boolean",
+              "default": true
+            },
+            "maxLongEdge": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1200
+            },
+            "jpegQuality": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.6
+            },
+            "redactSecureFields": {
+              "type": "boolean",
+              "default": true
+            },
+            "environments": {
+              "$ref": "#/$defs/environments"
+            }
+          }
+        },
+        "device": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "environments": {
+              "$ref": "#/$defs/environments"
+            }
+          }
+        },
+        "logs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "subsystems": {
+              "description": "OSLog subsystems. Empty means the app's bundle id.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "lastMinutes": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 5
+            },
+            "maxBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 200000
+            },
+            "environments": {
+              "$ref": "#/$defs/environments"
+            }
+          }
+        }
+      }
+    },
+    "triggers": {
+      "description": "Ways the composer opens on its own. Needs Feedback.installTriggers() (CSFeedbackKitUI). Programmatic presentation always works.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "screenshot"
+            ]
+          },
+          "prompt": {
+            "description": "Alert title before opening. Absent opens the composer directly.",
+            "type": "string"
+          },
+          "environments": {
+            "$ref": "#/$defs/environments"
+          }
+        }
+      }
+    },
+    "session": {
+      "description": "Tray: quick-capture several items, review, submit together.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 25
+        }
+      }
+    },
+    "copy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "composerTitle": {
+          "type": "string",
+          "default": "Feedback"
+        },
+        "notePlaceholder": {
+          "type": "string",
+          "default": "What happened?"
+        },
+        "sendButton": {
+          "type": "string",
+          "default": "Send"
+        },
+        "sentToast": {
+          "type": "string",
+          "default": "Sent"
+        },
+        "queuedToast": {
+          "type": "string",
+          "default": "Saved. It’ll send when you’re back online."
+        },
+        "failedTitle": {
+          "type": "string",
+          "default": "Couldn’t send"
+        },
+        "promptAction": {
+          "description": "Screenshot prompt: the button that opens the composer.",
+          "type": "string",
+          "default": "Write a note"
+        },
+        "promptCancel": {
+          "description": "Screenshot prompt: the button that dismisses it.",
+          "type": "string",
+          "default": "Not now"
+        }
+      }
+    },
+    "storage": {
+      "description": "Where attachments go for destinations with \"attachments\": \"link\". presigned: POST url {id, filename, content_type, size} → {upload_url, download_url, headers?, expires_at?}, then PUT the bytes. Any other type: an uploader registered with Feedback.start(uploaders:).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "examples": [
+            "presigned"
+          ]
+        },
+        "url": {
+          "description": "Signer endpoint for presigned. May contain ${NAME}.",
+          "type": "string"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "auth": {
+          "description": "Auth handler name for the signer.",
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 60
+        }
+      },
+      "if": {
+        "properties": {
+          "type": {
+            "const": "presigned"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "url"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "environment": {
+      "enum": [
+        "xcode",
+        "testflight",
+        "appstore"
+      ]
+    },
+    "environments": {
+      "description": "Limit to these environments. Absent means every enabled environment.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/environment"
+      },
+      "uniqueItems": true
+    },
+    "fieldValue": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        },
+        "label": {
+          "description": "Composer label. Default: key.",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "bool",
+            "stringArray"
+          ],
+          "default": "string"
+        },
+        "value": {
+          "description": "Fixed value. Makes the field static.",
+          "$ref": "#/$defs/fieldValue"
+        },
+        "sources": {
+          "description": "Where code may supply it. Screen wins over session.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "session",
+              "screen"
+            ]
+          },
+          "uniqueItems": true,
+          "default": [
+            "screen",
+            "session"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "sensitive": {
+          "description": "Masked in the composer. Still sent in full.",
+          "type": "boolean",
+          "default": false
+        },
+        "visible": {
+          "description": "Shown in the composer's context section.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "description": "Chip text. Default: #id.",
+          "type": "string"
+        },
+        "selected": {
+          "type": "boolean",
+          "default": false
+        },
+        "metadata": {
+          "description": "Opaque. Sent with the tag for receivers to route on.",
+          "type": "object"
+        }
+      }
+    },
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "url"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "http"
+          ],
+          "default": "http"
+        },
+        "url": {
+          "description": "May contain ${NAME} from Info.plist.",
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "enum": [
+            "POST",
+            "PUT"
+          ],
+          "default": "POST"
+        },
+        "headers": {
+          "description": "Values may contain ${NAME} from Info.plist.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "auth": {
+          "description": "Name of an auth handler registered in code. Its headers win.",
+          "type": "string"
+        },
+        "encoding": {
+          "enum": [
+            "json",
+            "multipart"
+          ],
+          "default": "json"
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 30
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5
+        },
+        "maxBodyBytes": {
+          "description": "Body size limit. Over it: shrink the screenshot, then drop logs, then the screenshot. The note is never dropped.",
+          "type": "integer",
+          "minimum": 1024,
+          "default": 4000000
+        },
+        "environments": {
+          "$ref": "#/$defs/environments"
+        },
+        "eventType": {
+          "description": "Top-level `type` in the payload for this destination.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "default": "feedback.submitted"
+        },
+        "signing": {
+          "description": "Request signing. standard-webhooks: webhook-id / webhook-timestamp / webhook-signature (Svix, Clerk, Resend, newer OpenBot). openbot: X-OpenBot-* headers; pair with format openbot and maxBodyBytes ≤ 65536. Put the secret in ${NAME}, never in the file.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scheme",
+            "secret"
+          ],
+          "properties": {
+            "scheme": {
+              "enum": [
+                "standard-webhooks",
+                "openbot"
+              ]
+            },
+            "secret": {
+              "type": "string",
+              "description": "whsec_<base64>, usually ${NAME}."
+            }
+          }
+        },
+        "format": {
+          "description": "Body shape: csfeedbackkit (the v1 payload), openbot (OpenBot's {type, occurredAt, data} envelope), or a format name registered in code with Feedback.start(formats:).",
+          "type": "string",
+          "minLength": 1,
+          "default": "csfeedbackkit"
+        },
+        "attachments": {
+          "description": "inline: in the body. link: uploaded to storage once per note; the body carries url instead of data. none: not sent here.",
+          "enum": [
+            "inline",
+            "link",
+            "none"
+          ],
+          "default": "inline"
+        },
+        "when": {
+          "description": "Only notes that match are sent here; every condition given must hold. Absent: every note.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tags": {
+              "description": "At least one of these tag ids is selected.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "field": {
+              "description": "A declared field. Alone: it has a value.",
+              "type": "string"
+            },
+            "is": {
+              "description": "With field: the value equals this (or a list contains it).",
+              "$ref": "#/$defs/fieldValue"
+            }
+          },
+          "dependentRequired": {
+            "is": [
+              "field"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

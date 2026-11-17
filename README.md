@@ -33,7 +33,9 @@ The steps below explain each piece.
 
 ### 1. Add the package
 
-Xcode → Add Package Dependencies → local path or git URL → add **CSFeedbackKitUI** to the app target.
+Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` (private; your GitHub
+account must be signed in under Xcode → Settings → Accounts) → Up to Next Major from `0.1.0` → add
+**CSFeedbackKitUI** to the app target. For working on the package alongside an app, add it by local path instead.
 
 ### 2. Add `Feedback.json` to the app target
 

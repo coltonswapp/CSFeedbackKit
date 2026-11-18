@@ -49,9 +49,10 @@ Keep each schema and its Swift type in sync. Breaking payload changes mean `csfe
    (failed notes are kept for manual resend).
 4. **Screenshot trigger (done) + tray (not started).** `Feedback.installTriggers()` + config `triggers`.
    Tray: quick capture, review, submit as a session.
-5. **Shizen adoption (in progress; Xcode builds, alongside the old note).** Bundle config, register `staff` auth + `staffAccess` check, lesson
-   screens become context providers, `/api/client/content-qa/notes` accepts
-   `csfeedbackkit/v1`, delete the old composer and screenshot shortcut.
+5. **Shizen adoption (in progress).** Done: bundled config + OpenBot layer, `staff` auth, `staffAccess`
+   check, `shizenNote` format for Studio's existing notes endpoint, lesson screen as context provider,
+   the package's screenshot trigger (Shizen's own shortcut deleted), queue in Settings → Debug.
+   Still to do: TestFlight, retire the old QA note composer.
 6. **Grill app adoption.** TestFlight-only config, `userEmail` / `grillId` providers.
 7. **Polish.** PencilKit markup, config reference. README and `Examples/Starter/` done.
-8. **Distribution.** Own git repo so other projects can add it by URL (today it's a local path).
+8. **Distribution (done).** github.com/coltonswapp/CSFeedbackKit, semver tags. Shizen pins it by URL.

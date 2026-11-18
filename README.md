@@ -6,7 +6,7 @@ A tester opens the composer and writes a note. The package gathers context (scre
 device, screenshot, logs) and POSTs a versioned payload to whatever URL the config names.
 What happens after delivery (tickets, triage, agents) is the receiver's job.
 
-> **Status:** in use in Shizen (Xcode builds). Config, fields, composer, delivery, signing, link
+> **Status:** in use in Shizen (Xcode builds, screenshot trigger on). Config, fields, composer, delivery, signing, link
 > uploads, the on-device queue, and the screenshot trigger all work. The tray (`session`) isn't built
 > yet. See [`PLAN.md`](PLAN.md).
 
@@ -33,8 +33,7 @@ The steps below explain each piece.
 
 ### 1. Add the package
 
-Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` (private; your GitHub
-account must be signed in under Xcode → Settings → Accounts) → Up to Next Major from `0.1.0` → add
+Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` → Up to Next Major from `0.1.1` → add
 **CSFeedbackKitUI** to the app target. For working on the package alongside an app, add it by local path instead.
 
 ### 2. Add `Feedback.json` to the app target

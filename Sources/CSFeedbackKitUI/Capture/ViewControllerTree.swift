@@ -21,8 +21,38 @@ enum ViewControllerTree {
         if let presented = base?.presentedViewController, !presented.isBeingDismissed {
             return top(from: presented)
         }
+        if let base, let child = fillingChild(of: base) {
+            return top(from: child)
+        }
         return base
     }
+
+    /// The visible child that is the parent's content, not an accessory inside it.
+    ///
+    /// Covers wrappers (a hosting controller around a representable, custom root containers):
+    /// the largest visible child, if it covers most of the parent. Coverage, not an exact size
+    /// match, so a child inset by the safe area still counts and a mini player or card doesn't.
+    private static func fillingChild(of base: UIViewController) -> UIViewController? {
+        guard base.isViewLoaded else { return nil }
+        let bounds = base.view.bounds
+        let parentArea = bounds.width * bounds.height
+        guard parentArea > 0 else { return nil }
+
+        let candidates = base.children.compactMap { child -> (UIViewController, CGFloat)? in
+            guard child.isViewLoaded, child.view.window != nil, !child.view.isHidden, child.view.alpha > 0.01
+            else { return nil }
+            let frame = child.view.convert(child.view.bounds, to: base.view).intersection(bounds)
+            guard !frame.isNull else { return nil }
+            return (child, frame.width * frame.height)
+        }
+        guard let (child, area) = candidates.max(by: { $0.1 < $1.1 }),
+              area >= parentArea * minimumChildCoverage else { return nil }
+        return child
+    }
+
+    /// Share of the parent a child must cover to be treated as the screen.
+    /// iPhone safe-area insets take roughly 11%, so 0.75 leaves room for them.
+    private static let minimumChildCoverage: CGFloat = 0.75
 
     /// The controller to present from: `controller` or whatever it's already presenting.
     static func presentationAnchor(for controller: UIViewController) -> UIViewController {
@@ -74,6 +104,11 @@ enum ViewControllerTree {
             return true
         }
         return false
+    }
+
+    /// The screen name for the payload: a SwiftUI `.feedbackScreen` name inside `controller`, else its type.
+    static func screenName(of controller: UIViewController) -> String {
+        SwiftUIScreenRegistry.name(within: controller) ?? String(describing: type(of: controller))
     }
 
     static func title(of controller: UIViewController) -> String? {

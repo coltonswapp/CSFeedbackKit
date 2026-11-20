@@ -24,7 +24,7 @@ extension Feedback {
 
         let providers = ViewControllerTree.contextProviders(around: screen) + SwiftUIContextRegistry.providersNearestFirst
         let source = FeedbackPayload.Source(
-            screen: String(describing: type(of: screen)),
+            screen: ViewControllerTree.screenName(of: screen),
             title: ViewControllerTree.title(of: screen)
         )
         guard let captured = Feedback.capture(source: source, contextProviders: providers) else { return false }

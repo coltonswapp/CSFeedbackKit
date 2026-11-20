@@ -33,7 +33,7 @@ The steps below explain each piece.
 
 ### 1. Add the package
 
-Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` → Up to Next Major from `0.1.1` → add
+Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` → Up to Next Major from `0.2.0` → add
 **CSFeedbackKitUI** to the app target. For working on the package alongside an app, add it by local path instead.
 
 ### 2. Add `Feedback.json` to the app target
@@ -109,6 +109,19 @@ extension GrillDetailViewController: FeedbackContextProvider {
 // SwiftUI screen
 GrillDetailView(grill: grill).feedbackContext(["grillId": .string(grill.id)])
 ```
+
+**Screen name** (`source.screen`): the visible view controller's type. To find it, the package follows
+navigation, tab, and presented controllers, then any visible child that covers most of its parent (at least
+75%), so wrappers like a hosting controller around a representable or a custom root container are skipped.
+SwiftUI screens would otherwise be named after their hosting controller (`UIHostingController<AnyView>`);
+name them yourself:
+
+```swift
+RecipeDetailView(recipe: recipe).feedbackScreen("RecipeDetail")
+```
+
+The name only applies while that view is visible inside the screen the note is about. If several named views
+are visible, the most deeply nested one wins.
 
 ### 6. Open the composer
 
@@ -270,7 +283,10 @@ Each destination decides its own body, attachments, and which notes it receives:
 
 ### Attachments as links (storage)
 
-Bots and webhooks often can't use a base64 image. They need a URL to fetch. Give the config a
+Bots and webhooks often can't use a base64 image. They need a URL to fetch. AI agents especially: a
+model sees base64 inside JSON as text, not a picture, and hosts often trim large fields before the model sees
+them. For OpenBot, the 64 KiB body limit also shrinks or drops inline screenshots, and the package logs a
+warning at start when an OpenBot destination sends screenshots inline. Give the config a
 `storage` section and set `"attachments": "link"` on those destinations:
 
 ```jsonc
@@ -297,6 +313,51 @@ Bots and webhooks often can't use a base64 image. They need a URL to fetch. Give
   ```
 - Projects without screenshots skip all of this. `storage` is only needed (and only checked) when a
   destination uses `link`.
+
+#### Recipe: Firebase Storage (no backend)
+
+For an app that already has Firebase. Link the `FirebaseStorage` product in the app, not this package, so
+apps without Firebase don't download it.
+
+```swift
+import FirebaseStorage
+
+Feedback.start(config: .bundled("Feedback"), uploaders: ["firebase": { upload in
+    let ref = Storage.storage().reference(withPath: "feedback/\(upload.noteId)/\(upload.filename)")
+    let metadata = StorageMetadata()
+    metadata.contentType = upload.contentType
+    _ = try await ref.putDataAsync(upload.data, metadata: metadata)
+    return FeedbackUploadResult(url: try await ref.downloadURL())
+}])
+```
+
+```jsonc
+"storage": { "type": "firebase" },
+"destinations": [{ "id": "bot", "url": "${BOT_URL}", "format": "openbot", "attachments": "link" }]
+```
+
+Storage rules, when the app doesn't use Firebase Auth:
+
+```
+match /b/{bucket}/o {
+  match /feedback/{noteId}/{file} {
+    allow read: if false;   // download-token URLs work without a read rule
+    allow write: if request.resource.size < 5 * 1024 * 1024
+                 && request.resource.contentType.matches('image/jpeg|text/plain.*');
+  }
+}
+```
+
+- **Writes are open.** Without Auth, anyone who finds the bucket in the app can upload to `feedback/`. The rules
+  limit that to small JPEGs and text. Turn on App Check if feedback is enabled in App Store builds.
+  `write`, not `create`, because a retry uploads to the same path again.
+- **Links are effectively public.** A download URL works for anyone who has it, until the token is revoked or
+  the file is deleted. Screenshots can show customer data, so get sign-off on storing them there.
+- **Logs go too.** `link` uploads every attachment for that destination. Check what's in the logs, or leave
+  `attachments.logs` off.
+- **Expire old files.** A bucket lifecycle rule (delete `feedback/` after, say, 90 days) limits both risks.
+  Notes older than that lose their images.
+- If any of that is a blocker, use `presigned` with a signer on your own server: short-lived links, no open bucket.
 
 ### Signed receivers
 
@@ -404,7 +465,7 @@ Sources/CSFeedbackKitUI/
   Queue/                      FeedbackQueueViewController (debug queue screen)
   Components/                 button, tag chip, tag flow (ported from Shizen)
   Capture/                    ViewSnapshotter (+ redaction), ViewControllerTree
-  SwiftUI/                    .feedbackContext, FeedbackButton
+  SwiftUI/                    .feedbackContext, .feedbackScreen, FeedbackButton
 Examples/                     Starter/ (copy-paste setup), sample configs, receiver.mjs
 ```
 

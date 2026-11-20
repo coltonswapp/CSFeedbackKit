@@ -67,6 +67,9 @@ public enum Feedback {
         ) {
         case .success(let config):
             configuration = config
+            for warning in ConfigValidator.warnings(in: config) {
+                Log.general.error("\(warning, privacy: .public)")
+            }
         case .failure(let error):
             configuration = nil
             Log.general.fault("\(error.description, privacy: .public)")

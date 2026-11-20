@@ -266,6 +266,25 @@ enum ConfigValidator {
         return issues
     }
 
+    // MARK: Warnings
+
+    /// Valid but almost certainly not what was meant. Logged at start; the config still loads.
+    static func warnings(in config: FeedbackConfig) -> [String] {
+        var warnings: [String] = []
+        let sendsScreenshots = config.attachments.screenshot?.enabled == true
+        for destination in config.destinations where sendsScreenshots && destination.attachments == .inline {
+            let isOpenBot = destination.format == "openbot" || destination.signing?.scheme == .openbot
+            if isOpenBot {
+                warnings.append(
+                    "destinations[\(destination.id)] sends screenshots inline to OpenBot. The bot's model sees base64 as text, "
+                        + "not an image, and the 64 KiB body limit shrinks or drops the screenshot. "
+                        + "Use \"attachments\": \"link\" with a storage section so the bot gets a URL it can fetch."
+                )
+            }
+        }
+        return warnings
+    }
+
     private static func duplicates(_ values: [String], label: String) -> [String] {
         var seen = Set<String>()
         var reported = Set<String>()

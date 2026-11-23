@@ -533,8 +533,14 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         var config = UIButton.Configuration.filled()
         config.cornerStyle = .fixed
         config.background.cornerRadius = appearance.sendButton.cornerRadius
-        config.baseForegroundColor = appearance.sendButton.title
-        config.background.backgroundColor = appearance.sendButton.background
+        // Black in light mode, inverted in dark mode so it stays visible on the sheet.
+        config.baseForegroundColor = .systemBackground
+        config.background.backgroundColor = .label
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var attributes = attributes
+            attributes.font = .preferredFont(forTextStyle: .headline)
+            return attributes
+        }
         config.title = selected?.displayName ?? (destinations.isEmpty ? "No destinations" : "Choose destination")
         config.image = UIImage(systemName: "chevron.up.chevron.down")
         config.imagePlacement = .trailing

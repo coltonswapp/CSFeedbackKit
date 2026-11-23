@@ -100,7 +100,7 @@ final class FeedbackPrimaryButton: UIButton {
         config.background.cornerRadius = colors.cornerRadius
         config.background.backgroundColor = isEnabled && isPressAnimating ? colors.highlightedBackground : background
         config.baseForegroundColor = titleColor
-        config.image = UIImage(systemName: "paperplane.fill")
+        config.image = UIImage(systemName: "arrow.up")
         config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(textStyle: .headline)
         configuration = config
     }

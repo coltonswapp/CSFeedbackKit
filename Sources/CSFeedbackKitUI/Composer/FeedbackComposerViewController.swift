@@ -102,13 +102,10 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         view.addSubview(actions)
         updateDestinations()
 
-        let scrollBottomToActions = scrollView.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -16)
-        scrollBottomToActions.priority = .defaultHigh
         NSLayoutConstraint.activate([
             actions.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: FeedbackPrimaryButton.horizontalInset),
             actions.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -FeedbackPrimaryButton.horizontalInset),
-            // Pinned to the safe area, not the keyboard: the keyboard covers it while typing.
-            actions.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            actions.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12),
             actions.heightAnchor.constraint(equalToConstant: FeedbackPrimaryButton.preferredHeight),
 
             sendButton.widthAnchor.constraint(equalTo: actions.widthAnchor, multiplier: 1.0 / 3.0),
@@ -116,10 +113,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            // Stops above the actions, or above the keyboard when it is up.
-            scrollView.bottomAnchor.constraint(lessThanOrEqualTo: actions.topAnchor, constant: -16),
-            scrollView.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor),
-            scrollBottomToActions,
+            scrollView.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -16),
 
             stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
             stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),

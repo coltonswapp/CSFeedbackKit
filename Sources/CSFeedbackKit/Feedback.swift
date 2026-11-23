@@ -177,7 +177,7 @@ public enum Feedback {
 
     // MARK: Delivery
 
-    /// Builds the payload, saves it on device, and tries every destination once right away.
+    /// Builds the payload, saves it on device, and tries each chosen or matching destination once right away.
     ///
     /// - Returns: `.delivered` when every destination accepted it, `.queued` when some will
     ///   be retried later.
@@ -188,13 +188,27 @@ public enum Feedback {
         return try await deliver(saved)
     }
 
+    /// Destinations available for the draft's environment, tags, and custom fields, in config order.
+    public static func availableDestinations(for capture: FeedbackCapture, draft: FeedbackDraft) -> [DestinationConfig] {
+        guard let configuration else { return [] }
+        let tags = Set(configuration.tags.map(\.id)).intersection(draft.tagIDs)
+        let custom = PayloadBuilder.customFields(configuration: configuration, capture: capture, draft: draft)
+        return configuration.destinations.filter {
+            $0.environments.allows(capture.environment) && ($0.when?.matches(tagIDs: tags, custom: custom) ?? true)
+        }
+    }
+
     /// Builds the payload and saves it in the outbox. Once this returns, the note can't be
     /// lost, so UI can dismiss and call `deliver` without making the tester wait.
     public static func save(_ capture: FeedbackCapture, draft: FeedbackDraft) async throws -> SavedFeedback {
         guard let configuration else { throw FeedbackError.notStarted }
         let payload = try await makePayload(capture, draft: draft)
         let destinationIDs = configuration.destinations
-            .filter { $0.environments.allows(capture.environment) && ($0.when?.matches(payload) ?? true) }
+            .filter {
+                (draft.destinationID == nil || $0.id == draft.destinationID)
+                    && $0.environments.allows(capture.environment)
+                    && ($0.when?.matches(payload) ?? true)
+            }
             .map(\.id)
         guard !destinationIDs.isEmpty else { throw FeedbackError.noDestinations }
 

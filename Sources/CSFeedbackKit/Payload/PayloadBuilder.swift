@@ -12,13 +12,7 @@ enum PayloadBuilder {
         let environment = capture.environment
         let attachmentsConfig = configuration.attachments
 
-        // Custom fields: captured values, plus what the tester typed (declared, typed, non-static only).
-        var custom = capture.fields.values
-        for (key, value) in draft.filledFields {
-            if let accepted = FieldResolver.accept(typed: value, for: key, in: configuration.fields) {
-                custom[key] = accepted
-            }
-        }
+        let custom = customFields(configuration: configuration, capture: capture, draft: draft)
         let missing = configuration.fields.filter { $0.required && custom[$0.key] == nil }
         guard missing.isEmpty else {
             throw FeedbackError.missingRequiredFields(missing.map(\.label))
@@ -72,6 +66,19 @@ enum PayloadBuilder {
             device: device,
             attachments: attachments
         )
+    }
+
+    static func customFields(
+        configuration: FeedbackConfig, capture: FeedbackCapture, draft: FeedbackDraft
+    ) -> FeedbackValues {
+        // Custom fields: captured values, plus what the tester typed (declared, typed, non-static only).
+        var custom = capture.fields.values
+        for (key, value) in draft.filledFields {
+            if let accepted = FieldResolver.accept(typed: value, for: key, in: configuration.fields) {
+                custom[key] = accepted
+            }
+        }
+        return custom
     }
 
     private static func nonEmpty(_ text: String) -> String? {

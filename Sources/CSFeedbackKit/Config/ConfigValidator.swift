@@ -24,7 +24,7 @@ enum ConfigValidator {
     private static let arrayItemKeys: [String: Set<String>] = [
         "fields": ["key", "label", "type", "value", "sources", "required", "sensitive", "visible"],
         "tags": ["id", "label", "selected", "metadata"],
-        "destinations": ["id", "type", "url", "method", "headers", "auth", "encoding", "timeoutSeconds", "maxAttempts", "maxBodyBytes", "eventType", "signing", "format", "attachments", "when", "environments"],
+        "destinations": ["id", "name", "type", "url", "method", "headers", "auth", "encoding", "timeoutSeconds", "maxAttempts", "maxBodyBytes", "eventType", "signing", "format", "attachments", "when", "environments"],
         "triggers": ["type", "prompt", "environments"],
     ]
 

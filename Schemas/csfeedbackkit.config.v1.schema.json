@@ -429,6 +429,10 @@
           "type": "string",
           "minLength": 1
         },
+        "name": {
+          "description": "Display name in the composer. Defaults to the destination id.",
+          "type": "string"
+        },
         "type": {
           "enum": [
             "http"

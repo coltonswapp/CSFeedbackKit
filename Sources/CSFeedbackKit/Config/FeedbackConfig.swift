@@ -169,6 +169,14 @@ public struct DestinationConfig: Codable, Sendable, Equatable {
     }
 
     public var id: String
+    /// Optional name shown in the composer.
+    public var name: String?
+
+    public var displayName: String {
+        guard let name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return id }
+        return name
+    }
+
     public var type: Kind
     /// May contain `${NAME}` (Info.plist).
     public var url: String
@@ -212,6 +220,7 @@ public struct DestinationConfig: Codable, Sendable, Equatable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
         type = try c.decodeIfPresent(Kind.self, forKey: .type) ?? .http
         url = try c.decode(String.self, forKey: .url)
         method = try c.decodeIfPresent(String.self, forKey: .method) ?? "POST"
@@ -268,11 +277,15 @@ public struct RouteCondition: Codable, Sendable, Equatable {
     }
 
     public func matches(_ payload: FeedbackPayload) -> Bool {
-        if let tags, !tags.isEmpty, !payload.tags.contains(where: { tags.contains($0.id) }) {
+        matches(tagIDs: Set(payload.tags.map(\.id)), custom: payload.custom)
+    }
+
+    func matches(tagIDs: Set<String>, custom: FeedbackValues) -> Bool {
+        if let tags, !tags.isEmpty, tagIDs.isDisjoint(with: tags) {
             return false
         }
         if let field {
-            guard let value = payload.custom[field] else { return false }
+            guard let value = custom[field] else { return false }
             if let equals, value != equals {
                 guard case .strings(let items) = value, case .string(let wanted) = equals, items.contains(wanted) else {
                     return false

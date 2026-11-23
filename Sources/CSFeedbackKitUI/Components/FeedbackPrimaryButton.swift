@@ -1,6 +1,6 @@
 import UIKit
 
-/// Full-width send button. Port of Shizen's `PrimaryButton`: press scale, haptics,
+/// Primary send button. Port of Shizen's `PrimaryButton`: press scale, haptics,
 /// highlighted and disabled colors.
 final class FeedbackPrimaryButton: UIButton {
     static let preferredHeight: CGFloat = 55
@@ -44,12 +44,6 @@ final class FeedbackPrimaryButton: UIButton {
         guard window != nil else { return }
         pressHaptic.prepare()
         releaseHaptic.prepare()
-    }
-
-    override func setTitle(_ title: String?, for state: UIControl.State) {
-        super.setTitle(title, for: state)
-        guard state == .normal else { return }
-        applyAppearance()
     }
 
     @objc private func touchDown() {
@@ -106,13 +100,8 @@ final class FeedbackPrimaryButton: UIButton {
         config.background.cornerRadius = colors.cornerRadius
         config.background.backgroundColor = isEnabled && isPressAnimating ? colors.highlightedBackground : background
         config.baseForegroundColor = titleColor
-        config.title = title(for: .normal)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var attributes = incoming
-            attributes.font = .systemFont(ofSize: 17, weight: .bold)
-            attributes.foregroundColor = titleColor
-            return attributes
-        }
+        config.image = UIImage(systemName: "paperplane.fill")
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(textStyle: .headline)
         configuration = config
     }
 }

@@ -33,7 +33,7 @@ The steps below explain each piece.
 
 ### 1. Add the package
 
-Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` → Up to Next Major from `0.2.0` → add
+Xcode → Add Package Dependencies → `https://github.com/coltonswapp/CSFeedbackKit` → Up to Next Major from `0.3.0` → add
 **CSFeedbackKitUI** to the app target. For working on the package alongside an app, add it by local path instead.
 
 ### 2. Add `Feedback.json` to the app target
@@ -225,9 +225,16 @@ Accepted in the config but **not built yet**. `"session": { "enabled": true }` c
 ## Delivery
 
 `Feedback.save` builds the payload and writes it to the outbox. After that the note can't be lost.
-`Feedback.deliver` then tries every destination once. `Feedback.submit` does both. The composer
+`Feedback.deliver` then tries each saved destination once. `Feedback.submit` does both. The composer
 dismisses after `save` and shows the delivery toast when `deliver` finishes, so testers never wait
 on the network.
+
+When multiple destinations match a note's environment, tags, and fields, choose one from the
+destination menu beside the paper-plane Send button. The menu shows each destination's optional
+`name` and falls back to its `id`. A single matching destination is selected automatically.
+For custom composers, use `Feedback.availableDestinations(for:draft:)` and set
+`FeedbackDraft.destinationID` before saving or submitting. Leaving it unset sends to all matching
+destinations. Retries and manual resends use the destinations saved with the note.
 
 | Response | Result |
 |---|---|
@@ -261,7 +268,7 @@ Each destination decides its own body, attachments, and which notes it receives:
 
 ```jsonc
 "destinations": [
-  { "id": "studio", "url": "${CMS_URL}/notes", "auth": "staff", "format": "shizenNote" },
+  { "id": "studio", "name": "Shizen Studio", "url": "${CMS_URL}/notes", "auth": "staff", "format": "shizenNote" },
   { "id": "bugs",   "url": "${BUGS_URL}", "format": "csfeedbackkit", "attachments": "none",
     "when": { "tags": ["bug", "ux"] } },
   { "id": "hana",   "url": "${HANA_URL}", "when": { "field": "agent", "is": "hana" } }
@@ -364,7 +371,7 @@ match /b/{bucket}/o {
 A destination can sign each request. The secret always comes from `${NAME}` (pass it with `variables:`):
 
 ```jsonc
-{ "id": "openbot", "url": "${BOT_URL}", "format": "openbot",
+{ "id": "openbot", "name": "OpenBot", "url": "${BOT_URL}", "format": "openbot",
   "signing": { "scheme": "openbot", "secret": "${BOT_SECRET}" }, "maxBodyBytes": 65536 }
 ```
 

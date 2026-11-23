@@ -25,6 +25,7 @@
   "destinations": [
     {
       "id": "studio",
+      "name": "Shizen Studio",
       "url": "${SHIZEN_CMS_BASE_URL}/api/client/content-qa/notes",
       "auth": "staff"
     }

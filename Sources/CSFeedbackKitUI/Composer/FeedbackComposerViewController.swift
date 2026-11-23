@@ -16,7 +16,9 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
     private let stack = UIStackView()
     private let noteTextView = UITextView()
     private let notePlaceholder = UILabel()
+    private let destinationButton = UIButton(type: .system)
     private let sendButton: FeedbackPrimaryButton
+    private var selectedDestinationID: String?
     private let contextDisclosureButton = UIButton(type: .system)
     private let contextChevron = UIImageView()
     private let contextBodyLabel = UILabel()
@@ -40,7 +42,11 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         self.appearance = appearance
         self.screenshotJPEG = screenshotJPEG
         self.forcesScreenshot = forcesScreenshot
-        sendButton = FeedbackPrimaryButton(colors: appearance.sendButton)
+        var sendColors = FeedbackAppearance.ButtonColors.blue
+        sendColors.background = .systemBlue
+        sendColors.highlightedBackground = UIColor.systemBlue.withAlphaComponent(0.8)
+        sendColors.cornerRadius = appearance.sendButton.cornerRadius
+        sendButton = FeedbackPrimaryButton(colors: sendColors)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -55,10 +61,12 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         view.backgroundColor = appearance.pageBackground
         navigationItem.title = capture.source?.title ?? configuration.copy.composerTitle
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .done,
+            image: UIImage(systemName: "xmark"),
+            style: .plain,
             target: self,
-            action: #selector(doneTapped)
+            action: #selector(closeTapped)
         )
+        navigationItem.rightBarButtonItem?.accessibilityLabel = "Close"
         let copyItem = UIBarButtonItem(
             image: UIImage(systemName: "doc.on.doc"),
             style: .plain,
@@ -82,21 +90,29 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         }
         stack.addArrangedSubview(makeNoteSection())
 
-        sendButton.setTitle(configuration.copy.sendButton, for: .normal)
+        let actions = UIStackView(arrangedSubviews: [destinationButton, sendButton])
+        actions.spacing = 10
+        actions.translatesAutoresizingMaskIntoConstraints = false
+        destinationButton.showsMenuAsPrimaryAction = true
+        destinationButton.accessibilityLabel = "Destination"
+        destinationButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         sendButton.accessibilityLabel = configuration.copy.sendButton
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
-        view.addSubview(sendButton)
+        view.addSubview(actions)
+        updateDestinations()
 
         NSLayoutConstraint.activate([
-            sendButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: FeedbackPrimaryButton.horizontalInset),
-            sendButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -FeedbackPrimaryButton.horizontalInset),
-            sendButton.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12),
-            sendButton.heightAnchor.constraint(equalToConstant: FeedbackPrimaryButton.preferredHeight),
+            actions.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: FeedbackPrimaryButton.horizontalInset),
+            actions.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -FeedbackPrimaryButton.horizontalInset),
+            actions.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12),
+            actions.heightAnchor.constraint(equalToConstant: FeedbackPrimaryButton.preferredHeight),
+
+            sendButton.widthAnchor.constraint(equalTo: actions.widthAnchor, multiplier: 1.0 / 3.0),
 
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: sendButton.topAnchor, constant: -16),
+            scrollView.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -16),
 
             stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
             stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
@@ -281,6 +297,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
             switch field.type {
             case .bool:
                 let toggle = UISwitch()
+                toggle.addTarget(self, action: #selector(updateDestinations), for: .valueChanged)
                 inputs.append(FieldInput(field: field, textField: nil, toggle: toggle))
                 let label = UILabel()
                 label.text = field.label
@@ -292,6 +309,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
             case .string, .number, .stringArray:
                 let placeholder = field.type == .stringArray ? "Comma separated" : field.label
                 let textField = makeTextField(placeholder: placeholder)
+                textField.addTarget(self, action: #selector(updateDestinations), for: .editingChanged)
                 if field.type == .number { textField.keyboardType = .decimalPad }
                 inputs.append(FieldInput(field: field, textField: textField, toggle: nil))
                 rows.append(labeled(field.label, textField))
@@ -378,6 +396,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         tagControls = configuration.tags.map { tag in
             let control = FeedbackTagControl(title: tag.label, tint: tint)
             control.setSelectedWithoutAnimation(tag.selected)
+            control.addTarget(self, action: #selector(updateDestinations), for: .valueChanged)
             return (tag.id, control)
         }
 
@@ -451,7 +470,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         appearance.showToast(self, FeedbackToast(text: "Copied", kind: .success))
     }
 
-    @objc private func doneTapped() {
+    @objc private func closeTapped() {
         dismiss(animated: true)
     }
 
@@ -463,11 +482,18 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         }
         view.endEditing(true)
 
+        guard let selectedDestinationID else { return }
+        var draft = currentDraft()
+        draft.destinationID = selectedDestinationID
+        send(draft)
+    }
+
+    private func currentDraft() -> FeedbackDraft {
         var filled: FeedbackValues = [:]
         for input in inputs {
             if let value = input.value { filled[input.field.key] = value }
         }
-        let draft = FeedbackDraft(
+        return FeedbackDraft(
             note: typedNote,
             tagIDs: selectedTagIDs,
             filledFields: filled,
@@ -475,7 +501,39 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
             includeLogs: logsToggle?.isSelected ?? false,
             testerIdentity: testerInput?.text
         )
+    }
 
+    @objc private func updateDestinations() {
+        let destinations = Feedback.availableDestinations(for: capture, draft: currentDraft())
+        let selected = destinations.count == 1
+            ? destinations.first
+            : destinations.first { $0.id == selectedDestinationID }
+        selectedDestinationID = selected?.id
+
+        var config = UIButton.Configuration.filled()
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = appearance.sendButton.cornerRadius
+        config.baseForegroundColor = appearance.sendButton.title
+        config.background.backgroundColor = appearance.sendButton.background
+        config.title = selected?.displayName ?? (destinations.isEmpty ? "No destinations" : "Choose destination")
+        config.image = UIImage(systemName: "chevron.up.chevron.down")
+        config.imagePlacement = .trailing
+        config.imagePadding = 8
+        config.titleLineBreakMode = .byTruncatingTail
+        destinationButton.configuration = config
+        destinationButton.accessibilityValue = config.title
+
+        destinationButton.menu = UIMenu(children: destinations.map { destination in
+            UIAction(title: destination.displayName, state: destination.id == selectedDestinationID ? .on : .off) { [weak self] _ in
+                self?.selectedDestinationID = destination.id
+                self?.updateDestinations()
+            }
+        })
+        destinationButton.isEnabled = !isSending && !destinations.isEmpty
+        sendButton.isEnabled = !isSending && selectedDestinationID != nil
+    }
+
+    private func send(_ draft: FeedbackDraft) {
         setSending(true)
         let capture = capture
         Task { [weak self] in
@@ -535,10 +593,10 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
 
     private func setSending(_ sending: Bool) {
         isSending = sending
-        sendButton.isEnabled = !sending
+        updateDestinations()
         screenshotToggle?.isEnabled = !sending
         logsToggle?.isEnabled = !sending
-        sendButton.setTitle(sending ? "Sending…" : configuration.copy.sendButton, for: .normal)
+        sendButton.accessibilityLabel = sending ? "Sending…" : configuration.copy.sendButton
         isModalInPresentation = sending
     }
 }

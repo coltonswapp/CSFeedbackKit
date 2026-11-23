@@ -27,6 +27,8 @@ public struct FeedbackDraft: Sendable, Equatable {
     public var testerIdentity: String?
     /// Set by the tray when items are submitted together.
     public var sessionId: String?
+    /// Send only to this eligible destination. Nil uses all matching destinations.
+    public var destinationID: String?
 
     public init(
         note: String,
@@ -35,7 +37,8 @@ public struct FeedbackDraft: Sendable, Equatable {
         screenshotJPEG: Data? = nil,
         includeLogs: Bool = true,
         testerIdentity: String? = nil,
-        sessionId: String? = nil
+        sessionId: String? = nil,
+        destinationID: String? = nil
     ) {
         self.note = note
         self.tagIDs = tagIDs
@@ -44,6 +47,7 @@ public struct FeedbackDraft: Sendable, Equatable {
         self.includeLogs = includeLogs
         self.testerIdentity = testerIdentity
         self.sessionId = sessionId
+        self.destinationID = destinationID
     }
 }
 

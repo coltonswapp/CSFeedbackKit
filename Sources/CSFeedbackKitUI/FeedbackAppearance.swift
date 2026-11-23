@@ -57,6 +57,8 @@ public struct FeedbackAppearance {
 
     /// Sheet background.
     public var pageBackground: UIColor
+    /// Primary colors for the destination picker. Both composer buttons use this corner radius.
+    /// The Send button uses system blue.
     public var sendButton: ButtonColors
     /// Fill of a selected tag chip.
     public var selectedTagTint: UIColor

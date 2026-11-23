@@ -3,7 +3,7 @@ import CSFeedbackKit
 
 /// The note sheet. Port of Shizen's QA note composer: collapsible context, growing note
 /// field, tag chips (+ screenshot/logs toggles), copy-for-agent, send.
-final class FeedbackComposerViewController: UIViewController, UITextViewDelegate {
+final class FeedbackComposerViewController: UIViewController, UITextViewDelegate, UIGestureRecognizerDelegate {
 
     private let capture: FeedbackCapture
     private let configuration: FeedbackConfig
@@ -77,7 +77,8 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         navigationItem.leftBarButtonItem = copyItem
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.keyboardDismissMode = .interactive
+        scrollView.keyboardDismissMode = .onDrag
+        scrollView.alwaysBounceVertical = true
         stack.axis = .vertical
         stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -101,10 +102,13 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         view.addSubview(actions)
         updateDestinations()
 
+        let scrollBottomToActions = scrollView.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -16)
+        scrollBottomToActions.priority = .defaultHigh
         NSLayoutConstraint.activate([
             actions.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: FeedbackPrimaryButton.horizontalInset),
             actions.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -FeedbackPrimaryButton.horizontalInset),
-            actions.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12),
+            // Pinned to the safe area, not the keyboard: the keyboard covers it while typing.
+            actions.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
             actions.heightAnchor.constraint(equalToConstant: FeedbackPrimaryButton.preferredHeight),
 
             sendButton.widthAnchor.constraint(equalTo: actions.widthAnchor, multiplier: 1.0 / 3.0),
@@ -112,7 +116,10 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -16),
+            // Stops above the actions, or above the keyboard when it is up.
+            scrollView.bottomAnchor.constraint(lessThanOrEqualTo: actions.topAnchor, constant: -16),
+            scrollView.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor),
+            scrollBottomToActions,
 
             stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
             stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
@@ -123,6 +130,11 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         ])
 
         installKeyboardScrollObservers()
+
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissTap.cancelsTouchesInView = false
+        dismissTap.delegate = self
+        view.addGestureRecognizer(dismissTap)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -131,6 +143,20 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
     }
 
     // MARK: Keyboard
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    /// Taps on any text input keep (or move) focus; taps anywhere else dismiss the keyboard.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var hit = touch.view
+        while let current = hit {
+            if current is UITextView || current is UITextField { return false }
+            hit = current.superview
+        }
+        return true
+    }
 
     /// Selector-based, so it unregisters itself when the sheet goes away.
     private func installKeyboardScrollObservers() {

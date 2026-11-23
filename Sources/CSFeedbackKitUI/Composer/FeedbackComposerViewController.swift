@@ -138,15 +138,23 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
 
     // MARK: Keyboard
 
+    /// Zero-height accessory. Host-app keyboard toolbars (IQKeyboardManager and similar) only
+    /// attach when a field has no accessory, so this keeps their Done/arrows bar off the sheet.
+    private static func emptyAccessoryView() -> UIView {
+        UIView(frame: .zero)
+    }
+
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
 
-    /// Taps on any text input keep (or move) focus; taps anywhere else dismiss the keyboard.
+    /// Taps on text inputs keep (or move) focus, and taps on controls (tags, buttons) go to the
+    /// control untouched; dismissing first would shift the layout and swallow the tap.
+    /// Taps anywhere else dismiss the keyboard.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         var hit = touch.view
         while let current = hit {
-            if current is UITextView || current is UITextField { return false }
+            if current is UITextView || current is UIControl { return false }
             hit = current.superview
         }
         return true
@@ -349,6 +357,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
     private func makeTextField(placeholder: String) -> UITextField {
         let field = UITextField()
         field.placeholder = placeholder
+        field.inputAccessoryView = Self.emptyAccessoryView()
         field.font = .preferredFont(forTextStyle: .body)
         field.backgroundColor = .secondarySystemGroupedBackground
         field.layer.cornerRadius = 12
@@ -385,6 +394,7 @@ final class FeedbackComposerViewController: UIViewController, UITextViewDelegate
         noteTextView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
         noteTextView.isScrollEnabled = false
         noteTextView.delegate = self
+        noteTextView.inputAccessoryView = Self.emptyAccessoryView()
         noteTextView.translatesAutoresizingMaskIntoConstraints = false
         noteTextView.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
         noteTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120).isActive = true
